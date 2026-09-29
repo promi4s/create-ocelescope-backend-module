@@ -1,0 +1,59 @@
+_min_copier_version: "9.0.0"
+_subdirectory: template
+_templates_suffix: .jinja
+_answers_file: .copier-answers.yml
+
+module_label:
+  type: str
+  help: Module name (shown in the Ocelescope UI)
+  default: "{{ _folder_name | regex_replace('[-_]+', ' ') | title }}"
+  validator: >-
+    {% if not (module_label | regex_search('^\s*[A-Za-z0-9]')) %}Module name must start with a letter or digit{% endif %}
+    {% if '"' in module_label %}Module name must not contain double quotes{% endif %}
+
+description:
+  type: str
+  help: Short description
+  default: An Ocelescope module
+  validator: >-
+    {% if '"' in description %}Description must not contain double quotes{% endif %}
+
+author:
+  type: str
+  help: Author name
+  default: Your Name
+  validator: >-
+    {% if '"' in author %}Author must not contain double quotes{% endif %}
+
+# Derived from module_label; not asked and not stored in the answers file.
+module_slug:
+  type: str
+  when: false
+  default: "{{ module_label | lower | regex_replace('[^a-z0-9]+', '-') | trim('-') }}"
+
+# `ModuleMeta.key`: the module is served under /modules/<key>/v1. A frontend
+# module generates its API client from it (`ocelescope-backend openapi --module <key>`).
+module_key:
+  type: str
+  when: false
+  default: >-
+    {% set words = (module_label | regex_replace('[^A-Za-z0-9]+', ' ') | trim).split(' ') %}{% set ns = namespace(name=words[0] | lower) %}{% for word in words[1:] %}{% set ns.name = ns.name ~ word[:1] | upper ~ word[1:] %}{% endfor %}{{ 'module' ~ ns.name[:1] | upper ~ ns.name[1:] if ns.name[:1].isdigit() else ns.name }}
+
+class_name:
+  type: str
+  when: false
+  default: >-
+    {% set ns = namespace(name='') %}{% for word in (module_label | regex_replace('[^A-Za-z0-9]+', ' ') | trim).split(' ') %}{% set ns.name = ns.name ~ word[:1] | upper ~ word[1:] %}{% endfor %}{{ 'Module' ~ ns.name if ns.name[:1].isdigit() else ns.name }}
+
+python_project:
+  type: str
+  when: false
+  default: "ocelescope-module-{{ module_slug }}"
+
+python_package:
+  type: str
+  when: false
+  default: "{{ python_project | replace('-', '_') }}"
+
+_message_after_copy: |
+  Created backend module "{{ module_label | trim }}" ({{ python_project }}, key "{{ module_key }}") in {{ _copier_conf.dst_path }}
