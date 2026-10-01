@@ -8,8 +8,7 @@ from {{ python_package }}.routes import router
 class {{ class_name }}(Module):
     meta = ModuleMeta(key="{{ module_key }}", version=Version("1.0"))
 
-    @classmethod
-    def create_app(cls) -> FastAPI:
-        app = FastAPI(title="{{ module_label | trim }}", version=str(cls.meta.version))
+    def create_app(self) -> FastAPI:
+        app = FastAPI(title="{{ module_label | trim }}", version=str(self.meta.version))
         app.include_router(router)
         return app
